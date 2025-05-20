@@ -36,6 +36,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/google_icon.png
+    - assets/check.png
   fonts:
     - family: PlusJakartaSans
       fonts:

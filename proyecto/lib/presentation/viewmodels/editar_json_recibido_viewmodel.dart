@@ -67,7 +67,7 @@ class EditarJsonRecibidoViewModel extends ChangeNotifier {
   Future<void> guardarEnFirestore() async {
     try {
       await FirebaseFirestore.instance
-          .collection('facturas')
+          .collection('egresos')
           .add(_compra.toMap());
     } catch (e) {
       debugPrint('Error al guardar en Firestore: $e');
