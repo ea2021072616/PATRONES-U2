@@ -1,0 +1,7 @@
+organization=erickorganizacion
+projectKey=erickorganizacion_proyec
+serverUrl=https://sonarcloud.io
+serverVersion=8.0.0.62629
+dashboardUrl=https://sonarcloud.io/dashboard?id=erickorganizacion_proyec
+ceTaskId=AZZ00hzD39awNFad1efl
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZZ00hzD39awNFad1efl
