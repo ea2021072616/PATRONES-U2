@@ -1,3 +1,4 @@
+import 'package:VanguardMoney/presentation/screens/home/inicio_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -66,7 +67,8 @@ final router = GoRouter(
           pageBuilder:
               (context, state) => NoTransitionPage(
                 key: state.pageKey,
-                child: const SizedBox(), // Contenido manejado por HomeScreen
+                child:
+                    const InicioScreen(), // Contenido manejado por HomeScreen
               ),
           routes: [
             // Scanner (se muestra sobre el home)
