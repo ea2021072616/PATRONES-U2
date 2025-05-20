@@ -1,3 +1,4 @@
+import 'package:VanguardMoney/presentation/screens/home/category_screen.dart';
 import 'package:VanguardMoney/presentation/screens/home/inicio_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -104,7 +105,7 @@ final router = GoRouter(
               (context, state) => NoTransitionPage(
                 key: state.pageKey,
                 child:
-                    const SizedBox(), // Reemplaza por tu pantalla de Categorías
+                    CategoryScreen(), // Reemplaza por tu pantalla de Categorías
                 // child: CategoriesScreen(),
               ),
         ),
