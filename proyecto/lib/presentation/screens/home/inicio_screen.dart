@@ -1,7 +1,9 @@
+import 'package:VanguardMoney/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // Importa tus paquetes de Firebase
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 
 class InicioScreen extends StatelessWidget {
   const InicioScreen({super.key});
@@ -30,76 +32,137 @@ class InicioScreen extends StatelessWidget {
 
 // Header
 class _HeaderSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Hola, Bienvenido De Nuevo',
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 20,
-                  color: Colors.white,
+    const _HeaderSection({super.key});
+
+    @override
+    Widget build(BuildContext context) {
+      final authViewModel = context.watch<AuthViewModel>();
+      final nombreUsuario = authViewModel.userData?.nombreCompleto ?? 'Usuario';
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hola, Bienvenido De Nuevo',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              Text(
-                'Buen día Ericksito',
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                  color: Colors.white70,
+                Text(
+                  'Buen día $nombreUsuario',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                    color: Colors.white70,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
-    );
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.notifications_none, color: Colors.white),
+              onPressed: () {},
+            ),
+          ],
+        ),
+      );
+    }
   }
-}
 
 // Gasto Hoy Card
 class _GastoHoyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Aquí puedes obtener el gasto de hoy desde Firebase
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Gasto Hoy: s/ 0.00', // Aquí pon el dato real de Firebase
-              style: GoogleFonts.plusJakartaSans(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: const Color(0xFF242424),
-              ),
+    final authViewModel = context.watch<AuthViewModel>();
+    final userId = authViewModel.user?.uid;
+
+    if (userId == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Obtener el rango de hoy (inicio y fin del día)
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = todayStart.add(const Duration(days: 1));
+
+    return FutureBuilder<QuerySnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('egresos')
+          .where('id_usuario', isEqualTo: userId)
+          .where('fechaEmision', isGreaterThanOrEqualTo: todayStart.toIso8601String())
+          .where('fechaEmision', isLessThan: todayEnd.toIso8601String())
+          .get(),
+      builder: (context, snapshot) {
+        double gastoHoy = 0.0;
+        if (snapshot.hasData) {
+          for (var doc in snapshot.data!.docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            gastoHoy += (data['total'] ?? 0).toDouble();
+          }
+        }
+
+        // Input solo de salida para mostrar la suma
+        final TextEditingController _outputController = TextEditingController(
+          text: gastoHoy.toStringAsFixed(2),
+        );
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
             ),
-            Icon(Icons.settings, color: Colors.grey[700]),
-          ],
-        ),
-      ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Gasto Hoy:',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: const Color(0xFF242424),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: _outputController,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          prefixText: 's/ ',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        ),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                          color: Colors.teal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.settings, color: Colors.grey[700]),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
-
 // Warning y gráfico circular
 class _WarningSection extends StatelessWidget {
   @override

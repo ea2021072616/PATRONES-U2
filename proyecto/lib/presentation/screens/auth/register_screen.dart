@@ -7,9 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../viewmodels/auth_viewmodel.dart';
-import '../../widgets/custom_text_field.dart';
-import '../../widgets/login_button.dart';
-import '../../widgets/or_divider.dart';
+import '../../widgets/auth/custom_text_field.dart';
+import '../../widgets/auth/login_button.dart';
+import '../../widgets/auth/or_divider.dart';
 import '../../../core/utils/validators.dart';
 
 class RegisterScreen extends StatefulWidget {

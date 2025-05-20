@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:VanguardMoney/presentation/screens/home/profile_screen.dart';
-import 'package:VanguardMoney/presentation/widgets/custom_nav_bar.dart';
-import 'package:VanguardMoney/presentation/widgets/scanner_fab.dart';
+import 'package:VanguardMoney/presentation/widgets/home/custom_nav_bar.dart';
+import 'package:VanguardMoney/presentation/widgets/home/scanner_fab.dart';
 import 'package:VanguardMoney/presentation/screens/home/inicio_screen.dart';
 
 class HomeScreen extends StatefulWidget {
