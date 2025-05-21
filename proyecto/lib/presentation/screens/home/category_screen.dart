@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-// Importa aquí la pantalla a la que quieres redirigir, por ejemplo:
-import 'package:VanguardMoney/presentation/screens/home/category_detail_screen.dart';
+// Agrega este import:
+import '../../viewmodels/categoria_detalle_viewmodel.dart';
 
 class CategoryScreen extends StatelessWidget {
   CategoryScreen({Key? key}) : super(key: key);
@@ -31,13 +30,12 @@ class CategoryScreen extends StatelessWidget {
             leading: const Icon(Icons.category),
             title: Text(categorias[index]),
             onTap: () {
-              // Redirige a la pantalla de detalle de categoría (ajusta según tu pantalla destino)
+              // Redirige a la pantalla de detalle de categoría
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder:
-                      (context) =>
-                          CategoryDetailScreen(categoria: categorias[index]),
+                  builder: (context) =>
+                      CategoriaDetalleView(categoria: categorias[index]),
                 ),
               );
             },
