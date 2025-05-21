@@ -9,7 +9,7 @@ import 'package:VanguardMoney/presentation/screens/auth/register_screen.dart';
 import 'package:VanguardMoney/presentation/screens/auth/edit_profile_screen.dart';
 import 'package:VanguardMoney/presentation/screens/home/home_screen.dart';
 import 'package:VanguardMoney/presentation/screens/home/profile_screen.dart';
-import 'package:VanguardMoney/presentation/screens/home/invoice_scanner_screen.dart';
+import 'package:VanguardMoney/presentation/screens/complementos/todosEgresos_view.dart';
 import 'package:VanguardMoney/presentation/screens/home/ia_scaner_screen.dart';
 
 // Asegúrate de importar tus pantallas de planes y categorías si existen
@@ -132,6 +132,13 @@ final router = GoRouter(
             key: state.pageKey,
             child: const EditProfileScreen(),
           ),
+    ),
+    GoRoute(
+      path: '/egresos',
+      name: 'egresos',
+      pageBuilder:
+          (context, state) =>
+              NoTransitionPage(key: state.pageKey, child: TodosEgresosScreen()),
     ),
   ],
 );

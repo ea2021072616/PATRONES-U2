@@ -1,291 +1,338 @@
-import 'package:VanguardMoney/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-// Importa tus paquetes de Firebase
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import '../../viewmodels/inicio_viewmodel.dart';
+import '../../viewmodels/auth_viewmodel.dart';
+import 'package:VanguardMoney/data/models/productos_model.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
-class InicioScreen extends StatelessWidget {
-  const InicioScreen({super.key});
+class InicioScreen extends StatefulWidget {
+  const InicioScreen({Key? key}) : super(key: key);
+
+  @override
+  State<InicioScreen> createState() => _InicioScreenState();
+}
+
+class _InicioScreenState extends State<InicioScreen> {
+  double limiteGastoDiario = 80.0;
+
+  void _cambiarLimite() async {
+    final controller = TextEditingController(
+      text: limiteGastoDiario.toStringAsFixed(2),
+    );
+    final result = await showDialog<double>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Configurar límite diario'),
+            content: TextField(
+              controller: controller,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Nuevo límite'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  final value = double.tryParse(controller.text);
+                  if (value != null && value > 0) {
+                    Navigator.pop(context, value);
+                  }
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
+          ),
+    );
+    if (result != null) {
+      setState(() {
+        limiteGastoDiario = result;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthViewModel>(context, listen: false);
+    final viewModel =
+        auth.user != null
+            ? InicioViewModel(
+              auth.user!.uid,
+              auth.userData?.nombreCompleto ?? 'Usuario',
+            )
+            : null;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF00D1B2), // Color de fondo superior
-      body: SafeArea(
+      appBar: AppBar(
+        title: const Text('Resumen Financiero'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _cambiarLimite,
+            tooltip: 'Configurar límite diario',
+          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: () {}),
+        ],
+      ),
+      body:
+          viewModel == null
+              ? const Center(child: Text('Usuario no autenticado'))
+              : _buildBody(context, viewModel),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, InicioViewModel viewModel) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildSaludo(viewModel),
+          _buildResumenDia(viewModel),
+          const SizedBox(height: 20),
+          _buildUltimosEgresos(viewModel),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaludo(InicioViewModel viewModel) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          viewModel.getSaludo(),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResumenDia(InicioViewModel viewModel) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Header con saludo y notificación
-            _HeaderSection(),
-            // Widget para el gasto de hoy
-            _GastoHoyCard(),
-            // Widget para el gráfico circular y warning
-            _WarningSection(),
-            // Widget para últimas transacciones
-            Expanded(child: _UltimasTransaccionesSection()),
+            const Text(
+              'Gastos del Día',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            StreamBuilder<double>(
+              stream: viewModel.getTotalHoy(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                }
+                if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                }
+                final gasto = snapshot.data ?? 0.0;
+                final percent = (gasto / limiteGastoDiario).clamp(0.0, 1.0);
+
+                Color color;
+                if (percent < 0.5) {
+                  color = Colors.green;
+                } else if (percent < 0.8) {
+                  color = Colors.orange;
+                } else {
+                  color = Colors.red;
+                }
+
+                String estado;
+                if (percent < 0.5) {
+                  estado = "Good";
+                } else if (percent < 0.8) {
+                  estado = "Warning";
+                } else {
+                  estado = "Te excediste";
+                }
+
+                return Column(
+                  children: [
+                    CircularPercentIndicator(
+                      radius: 80.0,
+                      lineWidth: 16.0,
+                      percent: percent,
+                      center: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '\s/ ${gasto.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'de \s/ ${limiteGastoDiario.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                      progressColor: color,
+                      backgroundColor: Colors.grey[200]!,
+                      circularStrokeCap: CircularStrokeCap.round,
+                      animation: true,
+                      arcType: ArcType.HALF,
+                      arcBackgroundColor: Colors.grey[300]!,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      estado,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),
     );
   }
-}
 
-// Header
-class _HeaderSection extends StatelessWidget {
-    const _HeaderSection({super.key});
-
-    @override
-    Widget build(BuildContext context) {
-      final authViewModel = context.watch<AuthViewModel>();
-      final nombreUsuario = authViewModel.userData?.nombreCompleto ?? 'Usuario';
-
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hola, Bienvenido De Nuevo',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  'Buen día $nombreUsuario',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
-            ),
-            IconButton(
-              icon: const Icon(Icons.notifications_none, color: Colors.white),
-              onPressed: () {},
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
-// Gasto Hoy Card
-class _GastoHoyCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final authViewModel = context.watch<AuthViewModel>();
-    final userId = authViewModel.user?.uid;
-
-    if (userId == null) {
-      return const SizedBox.shrink();
-    }
-
-    // Obtener el rango de hoy (inicio y fin del día)
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final todayEnd = todayStart.add(const Duration(days: 1));
-
-    return FutureBuilder<QuerySnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('egresos')
-          .where('id_usuario', isEqualTo: userId)
-          .where('fechaEmision', isGreaterThanOrEqualTo: todayStart.toIso8601String())
-          .where('fechaEmision', isLessThan: todayEnd.toIso8601String())
-          .get(),
-      builder: (context, snapshot) {
-        double gastoHoy = 0.0;
-        if (snapshot.hasData) {
-          for (var doc in snapshot.data!.docs) {
-            final data = doc.data() as Map<String, dynamic>;
-            gastoHoy += (data['total'] ?? 0).toDouble();
-          }
-        }
-
-        // Input solo de salida para mostrar la suma
-        final TextEditingController _outputController = TextEditingController(
-          text: gastoHoy.toStringAsFixed(2),
-        );
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Gasto Hoy:',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: const Color(0xFF242424),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      TextField(
-                        controller: _outputController,
-                        readOnly: true,
-                        decoration: const InputDecoration(
-                          prefixText: 's/ ',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                        ),
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                          color: Colors.teal,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.settings, color: Colors.grey[700]),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-// Warning y gráfico circular
-class _WarningSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Aquí puedes usar un paquete como percent_indicator para el gráfico
+  Widget _buildUltimosEgresos(InicioViewModel viewModel) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Aquí va el gráfico circular (puedes usar CircularPercentIndicator)
-          Text(
-            'Warning',
-            style: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              color: Colors.white,
-            ),
+          // Título y botón "Ver todos"
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Últimos Egresos',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: () {
+                  context.go('/egresos');
+                },
+                child: const Text('Ver todos'),
+              ),
+            ],
           ),
-          Text(
-            's/ 30',
-            style: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.w800,
-              fontSize: 32,
-              color: Colors.white,
-            ),
-          ),
-          Text(
-            'Última actualización 19/05/2025   s/ 50',
-            style: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.w400,
-              fontSize: 12,
-              color: Colors.white70,
-            ),
+          const SizedBox(height: 8),
+          StreamBuilder<List<CompraModel>>(
+            stream: viewModel.getUltimasCompras(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              }
+              final compras = snapshot.data ?? [];
+              return compras.isEmpty
+                  ? const Text('No hay egresos recientes')
+                  : Column(
+                    children:
+                        compras
+                            .map((compra) => _buildItemCompra(compra))
+                            .toList(),
+                  );
+            },
           ),
         ],
       ),
     );
   }
-}
 
-// Últimas transacciones (con Firebase)
-class _UltimasTransaccionesSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(32),
-          topRight: Radius.circular(32),
-        ),
-      ),
+  Widget _buildItemCompra(CompraModel compra) {
+    DateTime? fecha;
+    try {
+      fecha = DateFormat('dd/MM/yyyy HH:mm:ss').parse(compra.fechaEmision);
+    } catch (e) {
+      fecha = null;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Ultimas Transacciones',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    color: const Color(0xFF242424),
+                Expanded(
+                  child: Text(
+                    compra.lugarCompra,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                TextButton(onPressed: () {}, child: Text('Ver todo')),
+                const SizedBox(width: 8),
+                Text(
+                  '\$${compra.total.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream:
-                    FirebaseFirestore.instance
-                        .collection('transacciones')
-                        .orderBy('fecha', descending: true)
-                        .limit(4)
-                        .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final docs = snapshot.data!.docs;
-                  if (docs.isEmpty) {
-                    return const Text('No hay transacciones recientes.');
-                  }
-                  return ListView.builder(
-                    itemCount: docs.length,
-                    itemBuilder: (context, index) {
-                      final data = docs[index].data() as Map<String, dynamic>;
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.teal[100],
-                          child: Icon(
-                            Icons.monetization_on,
-                            color: Colors.teal[700],
-                          ),
-                        ),
-                        title: Text(
-                          data['categoria'] ?? '',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        subtitle: Text(
-                          data['tipo'] ?? '',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 12),
-                        ),
-                        trailing: Text(
-                          's/ ${data['monto'] ?? '0.00'}',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF377CC8),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
+            if (fecha != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  DateFormat('dd MMM yyyy - HH:mm').format(fecha),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
               ),
-            ),
+            const SizedBox(height: 8),
+            ...compra.productos
+                .take(2)
+                .map(
+                  (producto) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.circle, size: 8),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            producto.descripcion,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '\$${producto.importe.toStringAsFixed(2)}',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            if (compra.productos.length > 2)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '+ ${compra.productos.length - 2} productos más',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
