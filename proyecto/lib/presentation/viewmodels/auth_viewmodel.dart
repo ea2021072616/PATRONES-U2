@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:VanguardMoney/data/services/firestore_service.dart';
 import 'package:VanguardMoney/data/services/auth_service.dart';
 import 'package:VanguardMoney/data/models/user_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Asegúrate de tener este import
 
 class AuthViewModel extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -69,6 +70,12 @@ class AuthViewModel extends ChangeNotifier {
         return userCredential.uid;
       }
       return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        throw Exception('El correo ya está registrado.');
+      } else {
+        throw Exception('Error al registrar usuario: ${e.message}');
+      }
     } catch (e) {
       throw Exception('Error al registrar usuario: $e');
     } finally {
@@ -159,6 +166,22 @@ class AuthViewModel extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  Future<double?> getLimiteGastoDiario() async {
+    if (_user == null) return null;
+    return await _firestoreService.getLimiteGastoDiario(_user!.uid);
+  }
+
+  /// Guardar o actualizar el límite de gasto diario en Firestore
+  Future<void> setLimiteGastoDiario(double limite) async {
+    if (_user == null) return;
+    await _firestoreService.updateLimiteGastoDiario(
+      uid: _user!.uid,
+      limite: limite,
+    );
+    await loadUserData();
+    notifyListeners();
   }
 
   /// Escucha los cambios en la sesión

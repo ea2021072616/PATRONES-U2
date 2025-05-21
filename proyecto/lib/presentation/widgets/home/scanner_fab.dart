@@ -33,7 +33,7 @@ class ScannerFab extends StatelessWidget {
             ),
           ],
         ),
-        child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 28),
+        child: const Icon(Icons.camera_alt, color: Colors.white, size: 28),
       ),
     );
   }

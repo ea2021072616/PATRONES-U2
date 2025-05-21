@@ -50,4 +50,24 @@ class FirestoreService {
     if (data.length == 1) return; // No hay datos para actualizar
     await _firestore.collection('users').doc(uid).update(data);
   }
+
+  /// Actualiza solo el límite de gasto diario
+  Future<void> updateLimiteGastoDiario({
+    required String uid,
+    required double limite,
+  }) async {
+    await _firestore.collection('users').doc(uid).set({
+      'limiteGastoDiario': limite,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  /// Obtiene el límite de gasto diario
+  Future<double?> getLimiteGastoDiario(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    if (doc.exists && doc.data()!.containsKey('limiteGastoDiario')) {
+      return (doc.data()!['limiteGastoDiario'] as num).toDouble();
+    }
+    return null;
+  }
 }

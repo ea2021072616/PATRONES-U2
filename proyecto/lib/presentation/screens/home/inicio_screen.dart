@@ -15,11 +15,27 @@ class InicioScreen extends StatefulWidget {
 }
 
 class _InicioScreenState extends State<InicioScreen> {
-  double limiteGastoDiario = 80.0;
+  double? limiteGastoDiario;
+  bool _cargandoLimite = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarLimite();
+  }
+
+  Future<void> _cargarLimite() async {
+    final auth = Provider.of<AuthViewModel>(context, listen: false);
+    final limite = await auth.getLimiteGastoDiario();
+    setState(() {
+      limiteGastoDiario = limite;
+      _cargandoLimite = false;
+    });
+  }
 
   void _cambiarLimite() async {
     final controller = TextEditingController(
-      text: limiteGastoDiario.toStringAsFixed(2),
+      text: limiteGastoDiario?.toStringAsFixed(2) ?? '',
     );
     final result = await showDialog<double>(
       context: context,
@@ -49,6 +65,8 @@ class _InicioScreenState extends State<InicioScreen> {
           ),
     );
     if (result != null) {
+      final auth = Provider.of<AuthViewModel>(context, listen: false);
+      await auth.setLimiteGastoDiario(result);
       setState(() {
         limiteGastoDiario = result;
       });
@@ -75,12 +93,14 @@ class _InicioScreenState extends State<InicioScreen> {
             onPressed: _cambiarLimite,
             tooltip: 'Configurar límite diario',
           ),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _cargarLimite),
         ],
       ),
       body:
           viewModel == null
               ? const Center(child: Text('Usuario no autenticado'))
+              : _cargandoLimite
+              ? const Center(child: CircularProgressIndicator())
               : _buildBody(context, viewModel),
     );
   }
@@ -133,7 +153,9 @@ class _InicioScreenState extends State<InicioScreen> {
                   return Text('Error: ${snapshot.error}');
                 }
                 final gasto = snapshot.data ?? 0.0;
-                final percent = (gasto / limiteGastoDiario).clamp(0.0, 1.0);
+                final limite = limiteGastoDiario ?? 0.0;
+                final percent =
+                    (limite > 0) ? (gasto / limite).clamp(0.0, 1.0) : 0.0;
 
                 Color color;
                 if (percent < 0.5) {
@@ -163,14 +185,16 @@ class _InicioScreenState extends State<InicioScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            '\s/ ${gasto.toStringAsFixed(2)}',
+                            '\S/ ${gasto.toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            'de \s/ ${limiteGastoDiario.toStringAsFixed(2)}',
+                            limiteGastoDiario == null
+                                ? 'Límite: No definido'
+                                : 'de \S/ ${limiteGastoDiario!.toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.grey,

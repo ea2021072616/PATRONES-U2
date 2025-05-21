@@ -144,24 +144,124 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _forgotPassword() async {
-    if (_emailCtrl.text.isEmpty) {
-      _showError('Ingresa tu correo para recuperar la contraseña');
-      return;
-    }
-    try {
-      await context.read<AuthViewModel>().sendPasswordResetEmail(
-        _emailCtrl.text.trim(),
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Se envió un correo para restablecer tu contraseña'),
-          backgroundColor: Color(0xFF469B88),
-        ),
-      );
-    } catch (e) {
-      _showError('No se pudo enviar el correo: ${e.toString()}');
-    }
+    final controller = TextEditingController();
+    String? errorText;
+    bool loading = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder:
+              (context, setState) => Padding(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  top: 32,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.lock_reset,
+                      size: 48,
+                      color: Color(0xFF377CC8),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Recuperar contraseña',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: controller,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Correo electrónico',
+                        hintText: 'ejemplo@correo.com',
+                        errorText: errorText,
+                        prefixIcon: const Icon(Icons.email_outlined),
+                      ),
+                      enabled: !loading,
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon:
+                            loading
+                                ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : const Icon(Icons.send),
+                        label: const Text('Enviar enlace'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF377CC8),
+                          foregroundColor:
+                              Colors.white, // <-- Esto hace el texto blanco
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed:
+                            loading
+                                ? null
+                                : () async {
+                                  final email = controller.text.trim();
+                                  if (email.isEmpty || !email.contains('@')) {
+                                    setState(
+                                      () => errorText = 'Correo inválido',
+                                    );
+                                    return;
+                                  }
+                                  setState(() {
+                                    errorText = null;
+                                    loading = true;
+                                  });
+                                  try {
+                                    await context
+                                        .read<AuthViewModel>()
+                                        .sendPasswordResetEmail(email);
+                                    if (!context.mounted) return;
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Se envió un correo para restablecer tu contraseña',
+                                        ),
+                                        backgroundColor: Color(0xFF469B88),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    setState(() {
+                                      errorText =
+                                          'No se pudo enviar el correo: ${e.toString()}';
+                                      loading = false;
+                                    });
+                                  }
+                                },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+        );
+      },
+    );
   }
 
   @override
