@@ -221,7 +221,7 @@ class _EditarJsonViewState extends State<EditarJsonView> {
               ],
             ),
           ),
-          if (_showOverlay) const CheckOverlay(),
+          if (_showOverlay) const StatusOverlay(message: ''),
         ],
       ),
     );

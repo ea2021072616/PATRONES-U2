@@ -12,6 +12,7 @@ import '../../widgets/auth/animated_header.dart';
 import '../../widgets/auth/custom_text_field.dart';
 import '../../widgets/auth/login_button.dart';
 import '../../widgets/auth/or_divider.dart';
+import '../../widgets/check.dart'; // <-- Importa tu overlay multifuncional
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -36,6 +37,12 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<Color?> _gradientEnd;
 
   late ConfettiController _confettiController;
+
+  // Overlay de estado
+  bool _showOverlay = false;
+  String _overlayMessage = '';
+  IconData _overlayIcon = Icons.check_circle_outline;
+  Color _overlayColor = Colors.green;
 
   // Para las burbujas
   final int _bubbleCount = 12;
@@ -121,8 +128,15 @@ class _LoginScreenState extends State<LoginScreen>
     try {
       await authVM.loginWithGoogle();
       if (!mounted) return;
+      setState(() {
+        _showOverlay = true;
+        _overlayMessage = '¡Login con Google exitoso!';
+        _overlayIcon = Icons.check_circle;
+        _overlayColor = Colors.green;
+      });
       _confettiController.play();
       await Future.delayed(const Duration(milliseconds: 900));
+      setState(() => _showOverlay = false);
       if (mounted) context.go('/home');
     } catch (e) {
       if (!mounted) return;
@@ -134,6 +148,15 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _shake = true);
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) setState(() => _shake = false);
+    });
+    setState(() {
+      _showOverlay = true;
+      _overlayMessage = message;
+      _overlayIcon = Icons.error_outline;
+      _overlayColor = Colors.red;
+    });
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _showOverlay = false);
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -238,6 +261,19 @@ class _LoginScreenState extends State<LoginScreen>
                                         .sendPasswordResetEmail(email);
                                     if (!context.mounted) return;
                                     Navigator.pop(context);
+                                    setState(() {
+                                      _showOverlay = true;
+                                      _overlayMessage = '¡Correo enviado!';
+                                      _overlayIcon = Icons.check_circle_outline;
+                                      _overlayColor = Colors.green;
+                                    });
+                                    Future.delayed(
+                                      const Duration(seconds: 2),
+                                      () {
+                                        if (mounted)
+                                          setState(() => _showOverlay = false);
+                                      },
+                                    );
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
@@ -251,7 +287,19 @@ class _LoginScreenState extends State<LoginScreen>
                                       errorText =
                                           'No se pudo enviar el correo: ${e.toString()}';
                                       loading = false;
+                                      _showOverlay = true;
+                                      _overlayMessage =
+                                          'No se pudo enviar el correo';
+                                      _overlayIcon = Icons.error_outline;
+                                      _overlayColor = Colors.red;
                                     });
+                                    Future.delayed(
+                                      const Duration(seconds: 2),
+                                      () {
+                                        if (mounted)
+                                          setState(() => _showOverlay = false);
+                                      },
+                                    );
                                   }
                                 },
                       ),
@@ -421,10 +469,17 @@ class _LoginScreenState extends State<LoginScreen>
                                     _passwordCtrl.text.trim(),
                                   );
                                   if (mounted) {
+                                    setState(() {
+                                      _showOverlay = true;
+                                      _overlayMessage = '¡Login exitoso!';
+                                      _overlayIcon = Icons.check_circle;
+                                      _overlayColor = Colors.green;
+                                    });
                                     _confettiController.play();
                                     await Future.delayed(
                                       const Duration(milliseconds: 900),
                                     );
+                                    setState(() => _showOverlay = false);
                                     context.go('/home');
                                   }
                                 } catch (e) {
@@ -509,6 +564,12 @@ class _LoginScreenState extends State<LoginScreen>
               ],
             ),
           ),
+          if (_showOverlay)
+            StatusOverlay(
+              message: _overlayMessage,
+              icon: _overlayIcon,
+              iconColor: _overlayColor,
+            ),
         ],
       ),
     );
