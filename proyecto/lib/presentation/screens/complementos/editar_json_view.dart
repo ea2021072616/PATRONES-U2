@@ -16,25 +16,66 @@ class EditarJsonView extends StatefulWidget {
 class _EditarJsonViewState extends State<EditarJsonView> {
   bool _showOverlay = false;
 
+  // Controladores para los campos principales
+  late TextEditingController lugarController;
+  late TextEditingController fechaController;
+  late TextEditingController subtotalController;
+  late TextEditingController impuestosController;
+  late TextEditingController totalController;
+  late TextEditingController categoriaSuperiorController; // <-- Nuevo
+
+  // Listas de controladores para los productos
+  final List<TextEditingController> descControllers = [];
+  final List<TextEditingController> importeControllers = [];
+  final List<TextEditingController> categoriaControllers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    final viewModel = Provider.of<EditarJsonRecibidoViewModel>(context, listen: false);
+
+    lugarController = TextEditingController(text: viewModel.compra.lugarCompra);
+    fechaController = TextEditingController(text: viewModel.compra.fechaEmision);
+    subtotalController = TextEditingController(text: viewModel.compra.subtotal.toString());
+    impuestosController = TextEditingController(text: viewModel.compra.impuestos.toString());
+    totalController = TextEditingController(text: viewModel.compra.total.toString());
+    categoriaSuperiorController = TextEditingController(text: viewModel.compra.categoriaSuperior);
+
+    _initProductoControllers(viewModel);
+  }
+
+  void _initProductoControllers(EditarJsonRecibidoViewModel viewModel) {
+    descControllers.clear();
+    importeControllers.clear();
+    categoriaControllers.clear();
+    for (var producto in viewModel.compra.productos) {
+      descControllers.add(TextEditingController(text: producto.descripcion));
+      importeControllers.add(TextEditingController(text: producto.importe.toString()));
+      categoriaControllers.add(TextEditingController(text: producto.categoria));
+    }
+  }
+
+  @override
+  void dispose() {
+    lugarController.dispose();
+    fechaController.dispose();
+    subtotalController.dispose();
+    impuestosController.dispose();
+    totalController.dispose();
+    categoriaSuperiorController.dispose();
+    for (var c in descControllers) c.dispose();
+    for (var c in importeControllers) c.dispose();
+    for (var c in categoriaControllers) c.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<EditarJsonRecibidoViewModel>(context);
 
-    final lugarController = TextEditingController(
-      text: viewModel.compra.lugarCompra,
-    );
-    final fechaController = TextEditingController(
-      text: viewModel.compra.fechaEmision,
-    );
-    final subtotalController = TextEditingController(
-      text: viewModel.compra.subtotal.toString(),
-    );
-    final impuestosController = TextEditingController(
-      text: viewModel.compra.impuestos.toString(),
-    );
-    final totalController = TextEditingController(
-      text: viewModel.compra.total.toString(),
-    );
+    if (descControllers.length != viewModel.compra.productos.length) {
+      _initProductoControllers(viewModel);
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Editar Transacción')),
@@ -56,6 +97,7 @@ class _EditarJsonViewState extends State<EditarJsonView> {
                       impuestos: double.tryParse(impuestosController.text) ?? 0,
                       total: double.tryParse(totalController.text) ?? 0,
                       lugarCompra: lugarController.text,
+                      categoriaSuperior: categoriaSuperiorController.text,
                     );
                   },
                 ),
@@ -70,6 +112,7 @@ class _EditarJsonViewState extends State<EditarJsonView> {
                       impuestos: double.tryParse(impuestosController.text) ?? 0,
                       total: double.tryParse(totalController.text) ?? 0,
                       lugarCompra: lugarController.text,
+                      categoriaSuperior: categoriaSuperiorController.text,
                     );
                   },
                 ),
@@ -84,6 +127,7 @@ class _EditarJsonViewState extends State<EditarJsonView> {
                       impuestos: double.tryParse(value) ?? 0,
                       total: double.tryParse(totalController.text) ?? 0,
                       lugarCompra: lugarController.text,
+                      categoriaSuperior: categoriaSuperiorController.text,
                     );
                   },
                 ),
@@ -98,6 +142,7 @@ class _EditarJsonViewState extends State<EditarJsonView> {
                       impuestos: double.tryParse(impuestosController.text) ?? 0,
                       total: double.tryParse(value) ?? 0,
                       lugarCompra: lugarController.text,
+                      categoriaSuperior: categoriaSuperiorController.text,
                     );
                   },
                 ),
@@ -113,7 +158,17 @@ class _EditarJsonViewState extends State<EditarJsonView> {
                       impuestos: double.tryParse(impuestosController.text) ?? 0,
                       total: double.tryParse(totalController.text) ?? 0,
                       lugarCompra: value,
+                      categoriaSuperior: categoriaSuperiorController.text,
                     );
+                  },
+                ),
+                TextField(
+                  controller: categoriaSuperiorController,
+                  decoration: const InputDecoration(
+                    labelText: 'Categoría Superior',
+                  ),
+                  onChanged: (value) {
+                    viewModel.actualizarCategoriaSuperior(value);
                   },
                 ),
                 const SizedBox(height: 24),
@@ -122,17 +177,6 @@ class _EditarJsonViewState extends State<EditarJsonView> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 ...List.generate(viewModel.compra.productos.length, (index) {
-                  final producto = viewModel.compra.productos[index];
-                  final descController = TextEditingController(
-                    text: producto.descripcion,
-                  );
-                  final importeController = TextEditingController(
-                    text: producto.importe.toString(),
-                  );
-                  final categoriaController = TextEditingController(
-                    text: producto.categoria,
-                  );
-
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     child: Padding(
@@ -140,7 +184,7 @@ class _EditarJsonViewState extends State<EditarJsonView> {
                       child: Column(
                         children: [
                           TextField(
-                            controller: descController,
+                            controller: descControllers[index],
                             decoration: const InputDecoration(
                               labelText: 'Descripción',
                             ),
@@ -149,16 +193,14 @@ class _EditarJsonViewState extends State<EditarJsonView> {
                                 index,
                                 ProductoModel(
                                   descripcion: value,
-                                  importe:
-                                      double.tryParse(importeController.text) ??
-                                      0,
-                                  categoria: categoriaController.text,
+                                  importe: double.tryParse(importeControllers[index].text) ?? 0,
+                                  categoria: categoriaControllers[index].text,
                                 ),
                               );
                             },
                           ),
                           TextField(
-                            controller: importeController,
+                            controller: importeControllers[index],
                             decoration: const InputDecoration(
                               labelText: 'Importe',
                             ),
@@ -167,15 +209,15 @@ class _EditarJsonViewState extends State<EditarJsonView> {
                               viewModel.actualizarProducto(
                                 index,
                                 ProductoModel(
-                                  descripcion: descController.text,
+                                  descripcion: descControllers[index].text,
                                   importe: double.tryParse(value) ?? 0,
-                                  categoria: categoriaController.text,
+                                  categoria: categoriaControllers[index].text,
                                 ),
                               );
                             },
                           ),
                           TextField(
-                            controller: categoriaController,
+                            controller: categoriaControllers[index],
                             decoration: const InputDecoration(
                               labelText: 'Categoría',
                             ),
@@ -183,10 +225,8 @@ class _EditarJsonViewState extends State<EditarJsonView> {
                               viewModel.actualizarProducto(
                                 index,
                                 ProductoModel(
-                                  descripcion: descController.text,
-                                  importe:
-                                      double.tryParse(importeController.text) ??
-                                      0,
+                                  descripcion: descControllers[index].text,
+                                  importe: double.tryParse(importeControllers[index].text) ?? 0,
                                   categoria: value,
                                 ),
                               );

@@ -28,31 +28,34 @@ class ProductoModel {
 
 class CompraModel {
   final String idUsuario;
-  final String fechaEmision; // Cambiado de DateTime a String
+  final String fechaEmision;
   final double subtotal;
   final double impuestos;
   final double total;
   final String lugarCompra;
+  final String categoriaSuperior;
   final List<ProductoModel> productos;
 
   CompraModel({
     required this.idUsuario,
-    required this.fechaEmision, // Ahora es String
+    required this.fechaEmision,
     required this.subtotal,
     required this.impuestos,
     required this.total,
     required this.lugarCompra,
+    required this.categoriaSuperior,
     required this.productos,
   });
 
   factory CompraModel.fromMap(Map<String, dynamic> map) {
     return CompraModel(
       idUsuario: map['id_usuario'] ?? '',
-      fechaEmision: map['fechaEmision'] ?? '', // Ahora es String
+      fechaEmision: map['fechaEmision'] ?? '',
       subtotal: (map['subtotal'] ?? 0).toDouble(),
       impuestos: (map['impuestos'] ?? 0).toDouble(),
       total: (map['total'] ?? 0).toDouble(),
       lugarCompra: map['lugar_compra'] ?? '',
+      categoriaSuperior: map['categoria_superior'] ?? '',
       productos: (map['productos'] as List<dynamic>? ?? [])
           .map((item) => ProductoModel.fromMap(item))
           .toList(),
@@ -62,11 +65,12 @@ class CompraModel {
   Map<String, dynamic> toMap() {
     return {
       'id_usuario': idUsuario,
-      'fechaEmision': fechaEmision, // Ahora es String
+      'fechaEmision': fechaEmision,
       'subtotal': subtotal,
       'impuestos': impuestos,
       'total': total,
       'lugar_compra': lugarCompra,
+      'categoria_superior': categoriaSuperior,
       'productos': productos.map((p) => p.toMap()).toList(),
     };
   }

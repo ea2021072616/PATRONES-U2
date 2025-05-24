@@ -1,5 +1,6 @@
 import 'package:VanguardMoney/presentation/screens/home/category_screen.dart';
 import 'package:VanguardMoney/presentation/screens/home/inicio_screen.dart';
+import 'package:VanguardMoney/presentation/screens/home/planes_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,7 @@ import 'package:VanguardMoney/presentation/screens/home/home_screen.dart';
 import 'package:VanguardMoney/presentation/screens/home/profile_screen.dart';
 import 'package:VanguardMoney/presentation/screens/complementos/todosEgresos_view.dart';
 import 'package:VanguardMoney/presentation/screens/home/ia_scaner_screen.dart';
+import 'package:VanguardMoney/presentation/screens/complementos/planes_edit_view.dart'; // Agrega este import
 
 // Asegúrate de importar tus pantallas de planes y categorías si existen
 // import 'package:VanguardMoney/presentation/screens/home/planes_screen.dart';
@@ -93,8 +95,7 @@ final router = GoRouter(
           pageBuilder:
               (context, state) => NoTransitionPage(
                 key: state.pageKey,
-                child: const SizedBox(), // Reemplaza por tu pantalla de Planes
-                // child: PlanesScreen(),
+                child: PlanesVisualizacionScreen(), // Aquí muestras la pantalla de Planes
               ),
         ),
         // Ruta para Categorías

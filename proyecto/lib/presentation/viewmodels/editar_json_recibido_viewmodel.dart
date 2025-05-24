@@ -20,6 +20,7 @@ class EditarJsonRecibidoViewModel extends ChangeNotifier {
     required double impuestos,
     required double total,
     required String lugarCompra,
+    required String categoriaSuperior,
   }) {
     _compra = CompraModel(
       idUsuario: _compra.idUsuario,
@@ -28,6 +29,7 @@ class EditarJsonRecibidoViewModel extends ChangeNotifier {
       impuestos: impuestos,
       total: total,
       lugarCompra: lugarCompra,
+      categoriaSuperior: categoriaSuperior,
       productos: _compra.productos,
     );
     notifyListeners();
@@ -42,6 +44,22 @@ class EditarJsonRecibidoViewModel extends ChangeNotifier {
       impuestos: _compra.impuestos,
       total: _compra.total,
       lugarCompra: nuevoLugar,
+      categoriaSuperior: _compra.categoriaSuperior,
+      productos: _compra.productos,
+    );
+    notifyListeners();
+  }
+
+  // Editar la categoría superior de la compra
+  void actualizarCategoriaSuperior(String nuevaCategoria) {
+    _compra = CompraModel(
+      idUsuario: _compra.idUsuario,
+      fechaEmision: _compra.fechaEmision,
+      subtotal: _compra.subtotal,
+      impuestos: _compra.impuestos,
+      total: _compra.total,
+      lugarCompra: _compra.lugarCompra,
+      categoriaSuperior: nuevaCategoria,
       productos: _compra.productos,
     );
     notifyListeners();
@@ -50,7 +68,11 @@ class EditarJsonRecibidoViewModel extends ChangeNotifier {
   // Editar un producto específico
   void actualizarProducto(int index, ProductoModel nuevoProducto) {
     final productosActualizados = List<ProductoModel>.from(_compra.productos);
-    productosActualizados[index] = nuevoProducto;
+    productosActualizados[index] = ProductoModel(
+      descripcion: nuevoProducto.descripcion,
+      importe: nuevoProducto.importe,
+      categoria: nuevoProducto.categoria,
+    );
     _compra = CompraModel(
       idUsuario: _compra.idUsuario,
       fechaEmision: _compra.fechaEmision,
@@ -58,6 +80,7 @@ class EditarJsonRecibidoViewModel extends ChangeNotifier {
       impuestos: _compra.impuestos,
       total: _compra.total,
       lugarCompra: _compra.lugarCompra,
+      categoriaSuperior: _compra.categoriaSuperior,
       productos: productosActualizados,
     );
     notifyListeners();

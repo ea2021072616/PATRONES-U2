@@ -5,6 +5,7 @@ import 'package:VanguardMoney/presentation/screens/home/profile_screen.dart';
 import 'package:VanguardMoney/presentation/widgets/home/custom_nav_bar.dart';
 import 'package:VanguardMoney/presentation/widgets/home/scanner_fab.dart';
 import 'package:VanguardMoney/presentation/screens/home/inicio_screen.dart';
+import 'package:VanguardMoney/presentation/screens/complementos/planes_edit_view.dart'; // Agrega este import
 
 class HomeScreen extends StatefulWidget {
   final Widget? child;
@@ -63,16 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return const InicioScreen();
       case 1:
-        return Center(
-          child: Text(
-            'Pantalla de Planes',
-            style: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.w800,
-              fontSize: 28,
-              color: const Color(0xFF242424),
-            ),
-          ),
-        );
+        return PlanesScreen();
       case 3:
         return const ProfileScreen();
       default:

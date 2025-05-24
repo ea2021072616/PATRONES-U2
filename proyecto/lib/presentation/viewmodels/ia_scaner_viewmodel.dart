@@ -144,6 +144,8 @@ class IaScanerViewModel extends ChangeNotifier {
       Solo extrae no des más conversación ni una entrada de diálogo solo dame a la categoría que pertenece
       (Categorías: Alimentos, Hogar, Ropa, Salud, Tecnología, Entretenimiento, Transporte, Mascotas, Otros:otros no pertenece a 
       ninguna de las otras categorías),el nombre del producto,el precio, el usuario(El nombre de usuario ya esta definodo) y la fecha.Que estén en un formato json.
+      En categoría_superior escribe la categoría de la factura completa (Categorías: Alimentos, Hogar, Ropa, Salud, Tecnología, Entretenimiento, Transporte, Mascotas, Otros:otros no pertenece a 
+      ninguna de las otras categorías).
       Si lo que se entrega no es una factura, no respondas nada.
       Si lo que se entrega no son datos como precios o productos, no respondas nada.
       Debes de tomar el id_usuario de la app,campo que te paso, y no de la factura.
@@ -162,6 +164,7 @@ class IaScanerViewModel extends ChangeNotifier {
         "impuestos": 0.0,
         "total": 0.0,
         "lugar_compra": "",
+        "categoria_superior": "",
         "productos": [
           {
             "descripcion": "",
@@ -180,6 +183,8 @@ class IaScanerViewModel extends ChangeNotifier {
       Solo extrae no des más conversación ni una entrada de diálogo solo dame a la categoría que pertenece
       (Categorías: Alimentos, Hogar, Ropa, Salud, Tecnología, Entretenimiento, Transporte, Mascotas, Otros:otros no pertenece a 
       ninguna de las otras categorías),el nombre del producto,el precio, el usuario(El nombre de usuario ya esta definodo) y la fecha.Que estén en un formato json.
+      En categoría_superior escribe la categoría de la factura completa (Categorías: Alimentos, Hogar, Ropa, Salud, Tecnología, Entretenimiento, Transporte, Mascotas, Otros:otros no pertenece a 
+      ninguna de las otras categorías).
       Si lo que se entrega no es una factura, no respondas nada.
       Si lo que se entrega no son datos como precios o productos, no respondas nada.
       Debes de tomar el id_usuario de la app,campo que te paso, y no de la factura.
@@ -197,6 +202,7 @@ class IaScanerViewModel extends ChangeNotifier {
         "impuestos": 0.0,
         "total": 0.0,
         "lugar_compra": "",
+        "categoria_superior": "",
         "productos": [
           {
             "descripcion": "",
